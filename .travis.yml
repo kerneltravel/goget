@@ -1,0 +1,8 @@
+language: go
+go:
+  - 1.4
+  - tip
+script:
+  - go test
+install:
+  - go get github.com/mitchellh/ioprogress
