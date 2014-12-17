@@ -30,23 +30,14 @@ func main() {
 	`
 
 	args, _ := docopt.Parse(usage, os.Args[1:], true, "v0.1.0", false)
-	fmt.Println(args)
 
-	var uri, filename string
-	var replace bool
+	uri := args["<uri>"].(string)
+	replace := args["--replace"].(bool)
 
-	i, ok := args["<uri>"]
-	fmt.Println(i)
-	uri = i.(string)
-
-	i, ok = args["--replace"].(bool)
-	if ok {
-		replace = i.(bool)
-	}
-
-	i, ok = args["--name"]
-	if ok {
-		filename = i.(string)
+	name, ok := args["--name"]
+	var filename string
+	if ok && name != nil {
+		filename = name.(string)
 	}
 
 	get(uri, replace, filename)
@@ -55,14 +46,14 @@ func main() {
 func get(uri string, replace bool, fname string) {
 	_, e := url.ParseRequestURI(uri)
 	if e != nil {
-		fmt.Print("invalid url")
+		fmt.Println("invalid url")
 		os.Exit(1)
 	}
 
 	res, err := http.Get(uri)
 	defer res.Body.Close()
 	if err != nil {
-		fmt.Printf("http get error: %s", err.Error())
+		fmt.Printf("http get error: %s \n", err.Error())
 	}
 
 	contentLength := res.Header.Get("Content-Length")
@@ -82,7 +73,7 @@ func get(uri string, replace bool, fname string) {
 		if replace {
 			os.Remove(filename)
 		} else {
-			fmt.Errorf("file: %s exist", filename)
+			fmt.Printf("file: %s exist \n", filename)
 			os.Exit(1)
 		}
 	}
@@ -90,7 +81,7 @@ func get(uri string, replace bool, fname string) {
 	out, err := os.Create(filename)
 	defer out.Close()
 	if err != nil {
-		fmt.Printf("create file error: %s", err.Error())
+		fmt.Printf("create file error: %s \n", err.Error())
 	}
 
 	if contentLength != "" {
@@ -104,14 +95,14 @@ func get(uri string, replace bool, fname string) {
 
 			fmt.Println("start")
 			io.Copy(out, process)
-			fmt.Printf("finished, size: %s.\n", byteUnitString(size))
+			fmt.Printf("finished, size: %s. \n", byteUnitString(size))
 			return
 		}
 	}
 
 	fmt.Println("start")
 	size, err := io.Copy(out, res.Body)
-	fmt.Printf("finished, size: %s.\n", byteUnitString(size))
+	fmt.Printf("finished, size: %s. \n", byteUnitString(size))
 }
 
 // utils
