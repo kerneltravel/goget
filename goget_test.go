@@ -16,19 +16,20 @@ func TestExist(t *testing.T) {
 }
 
 func TestGetFilename(t *testing.T) {
-	f1 := getFilename("http://example.com/a.png")
-	f2 := getFilename("https://example.cn/a.png")
-	f3 := getFilename("example.com/a.png")
-	f4 := getFilename("example.cn/")
-	f5 := getFilename("example.com")
+	f1 := getFilename("http://example.com/a.png", "")
+	f2 := getFilename("https://example.cn/a.png", "")
+	f3 := getFilename("example.com/a.png", "")
+	f4 := getFilename("example.cn/", "")
+	f5 := getFilename("example.com", "")
 
-	f6 := getFilename("")
-	f7 := getFilename("http://example.com/a.png?name=xxoo")
-	f8 := getFilename("http://example.com/a.png#name=xxoo")
-	f9 := getFilename("http://example.com/a.png?name=xxoo#name=xxoo")
+	f6 := getFilename("", "")
+	f7 := getFilename("http://example.com/a.png?name=xxoo", "")
+	f8 := getFilename("http://example.com/a.png#name=xxoo", "")
+	f9 := getFilename("http://example.com/a.png?name=xxoo#name=xxoo", "")
+	f0 := getFilename("http://example.com/a?name=xxoo#name=xxoo", "png")
 
 	t.Log(f1, f2, f3, f4, f5)
-	t.Log(f6, f7, f8, f9)
+	t.Log(f6, f7, f8, f9, f0)
 
 	equal(f1, "a.png", t)
 	equal(f2, "a.png", t)
@@ -40,6 +41,7 @@ func TestGetFilename(t *testing.T) {
 	equal(f7, "a.png", t)
 	equal(f8, "a.png", t)
 	equal(f9, "a.png", t)
+	equal(f0, "a.png", t)
 }
 
 func TestCutAfter(t *testing.T) {
@@ -60,13 +62,15 @@ func TestByteUnitString(t *testing.T) {
 
 func TestGetByHttp(t *testing.T) {
 	url := "http://h.hiphotos.baidu.com/image/pic/item/e1fe9925bc315c60cb71c4748fb1cb1348547741.jpg"
-	if exist(getFilename(url)) {
-		os.Remove(getFilename(url))
+	if exist(getFilename(url, "")) {
+		os.Remove(getFilename(url, ""))
 	}
 
-	get(url)
+	get(url, false, "")
+	get(url, true, "")
+	get(url, true, "10086.png")
 
-	if !exist(getFilename(url)) {
+	if !exist(getFilename(url, "")) {
 		t.Fail()
 	}
 }
@@ -78,7 +82,8 @@ func TestGetByHttps(t *testing.T) {
 		os.Remove(filename)
 	}
 
-	get(url)
+	get(url, false, "")
+	get(url, true, "")
 
 	if !exist(filename) {
 		t.Fail()

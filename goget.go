@@ -1,6 +1,7 @@
 package main
 
 import "github.com/mitchellh/ioprogress"
+import "github.com/docopt/docopt-go"
 import "net/http"
 import "net/url"
 import "strings"
@@ -12,20 +13,49 @@ import "io"
 import "os"
 
 func main() {
-	uri := os.Args[1]
-	get(uri)
+	usage := `goget.
+	Usage:
+		goget <uri>
+		goget <uri> [--replace]
+		goget <uri> [--name=<filename>]
+		goget <uri> [--replace|--name=<filename>]
+		goget -h | --help
+		goget --version
+
+	Options:
+		-h --help            Show this screen.
+		--version            Show version.
+		-r --replace         Replace exist file.
+		-n --name=<filename> Set file name.
+	`
+
+	args, _ := docopt.Parse(usage, os.Args[1:], true, "v0.1.0", false)
+	fmt.Println(args)
+
+	var uri, filename string
+	var replace bool
+
+	i, ok := args["<uri>"]
+	fmt.Println(i)
+	uri = i.(string)
+
+	i, ok = args["--replace"].(bool)
+	if ok {
+		replace = i.(bool)
+	}
+
+	i, ok = args["--name"]
+	if ok {
+		filename = i.(string)
+	}
+
+	get(uri, replace, filename)
 }
 
-func get(uri string) {
+func get(uri string, replace bool, fname string) {
 	_, e := url.ParseRequestURI(uri)
 	if e != nil {
 		fmt.Print("invalid url")
-		os.Exit(1)
-	}
-
-	name := getFilename(uri)
-	if exist(name) {
-		fmt.Printf("file: %s exist", name)
 		os.Exit(1)
 	}
 
@@ -41,10 +71,20 @@ func get(uri string) {
 	mediaType := cutBefore(mimeType, "/")
 
 	var filename string
-	if path.Ext(name) == "" && mediaType != "" {
-		filename = name + "." + mediaType
+
+	if fname == "" {
+		filename = getFilename(uri, mediaType)
 	} else {
-		filename = name
+		filename = fname
+	}
+
+	if exist(filename) {
+		if replace {
+			os.Remove(filename)
+		} else {
+			fmt.Errorf("file: %s exist", filename)
+			os.Exit(1)
+		}
 	}
 
 	out, err := os.Create(filename)
@@ -85,17 +125,21 @@ func exist(filename string) bool {
 	return true
 }
 
-func getFilename(url string) string {
-	name := path.Base(url)
+func getFilename(url string, mediaType string) string {
+	n := path.Base(url)
 
-	if name == "" || name == "." {
+	if mediaType == "" && (n == "" || n == ".") {
 		return "goget-download"
 	}
 
-	name1 := cutAfter(name, "#")
-	name2 := cutAfter(name1, "?")
+	name1 := cutAfter(n, "#")
+	name := cutAfter(name1, "?")
 
-	return name2
+	if path.Ext(name) == "" && mediaType != "" {
+		return name + "." + mediaType
+	}
+
+	return name
 }
 
 func cutAfter(s, sep string) string {
