@@ -23,7 +23,6 @@ func get(uri string) {
 		os.Exit(1)
 	}
 
-	// todo: check file exist
 	name := getFilename(uri)
 	if exist(name) {
 		fmt.Printf("file: %s exist", name)
@@ -58,19 +57,21 @@ func get(uri string) {
 		size, err := strconv.ParseInt(contentLength, 10, 64)
 		if err == nil && size > 0 {
 			process := &ioprogress.Reader{
-				Reader: res.Body,
-				Size:   size,
+				DrawFunc: ioprogress.DrawTerminalf(os.Stdout, ioprogress.DrawTextFormatBytes),
+				Reader:   res.Body,
+				Size:     size,
 			}
 
+			fmt.Println("start")
 			io.Copy(out, process)
-			fmt.Printf("download finished, size: %d.\n", size)
+			fmt.Printf("finished, size: %s.\n", byteUnitString(size))
 			return
 		}
 	}
 
+	fmt.Println("start")
 	size, err := io.Copy(out, res.Body)
-
-	fmt.Printf("download finished, size: %d.\n", size)
+	fmt.Printf("finished, size: %s.\n", byteUnitString(size))
 }
 
 // utils
@@ -87,14 +88,22 @@ func exist(filename string) bool {
 func getFilename(url string) string {
 	name := path.Base(url)
 
-	if name == "" {
-		return "temp.download"
+	if name == "" || name == "." {
+		return "goget-download"
 	}
 
 	name1 := cutAfter(name, "#")
 	name2 := cutAfter(name1, "?")
 
 	return name2
+}
+
+func cutAfter(s, sep string) string {
+	if strings.Contains(s, sep) {
+		return strings.Split(s, sep)[0]
+	}
+
+	return s
 }
 
 func cutBefore(s, sep string) string {
@@ -105,10 +114,19 @@ func cutBefore(s, sep string) string {
 	return s
 }
 
-func cutAfter(s, sep string) string {
-	if strings.Contains(s, sep) {
-		return strings.Split(s, sep)[0]
+var byteUnits = []string{"B", "KB", "MB", "GB", "TB", "PB"}
+
+func byteUnitString(n int64) string {
+	var unit string
+	size := float64(n)
+	for i := 1; i < len(byteUnits); i++ {
+		if size < 1000 {
+			unit = byteUnits[i-1]
+			break
+		}
+
+		size = size / 1000
 	}
 
-	return s
+	return fmt.Sprintf("%.3g %s", size, unit)
 }

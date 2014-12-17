@@ -1,8 +1,10 @@
 language: go
 go:
-  - 1.4
   - tip
-script:
-  - go test
 install:
+  - go get github.com/axw/gocov/gocov
+  - go get github.com/mattn/goveralls
+  - go get golang.org/x/tools/cmd/cover
   - go get github.com/mitchellh/ioprogress
+script:
+  - $HOME/gopath/bin/goveralls -repotoken M35Koi4EqK4ZEHMds1k3lAvNWELQ26z7R
