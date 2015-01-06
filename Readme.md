@@ -8,6 +8,7 @@
 * `wget` by golang
   - auto decompression
   - process visualization
+  - resume download from break point
 
 ### usage
 

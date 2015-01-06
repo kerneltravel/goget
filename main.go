@@ -4,29 +4,25 @@ import "github.com/mitchellh/ioprogress"
 import "github.com/docopt/docopt-go"
 import "net/http"
 import "net/url"
-import "strings"
 import "strconv"
-import "path"
 import "mime"
 import "fmt"
 import "io"
 import "os"
 
 func main() {
-	usage := `goget.
+	usage := `
 	Usage:
-		goget <uri>
-		goget <uri> [--replace]
-		goget <uri> [--name=<filename>]
-		goget <uri> [--replace|--name=<filename>]
-		goget -h | --help
+		goget <uri> [--replace] [--name=<filename>]
+		goget --help
 		goget --version
 
 	Options:
-		-h --help            Show this screen.
-		--version            Show version.
-		-r --replace         Replace exist file.
-		-n --name=<filename> Set file name.
+		-r --replace         Replace exist file
+		-n --name=<filename> Set file name
+		--resume             Resume from break point
+		--help               Show this screen
+		--version            Show version
 	`
 
 	args, _ := docopt.Parse(usage, os.Args[1:], true, "v0.1.0", false)
@@ -103,65 +99,4 @@ func get(uri string, replace bool, fname string) {
 	fmt.Println("start")
 	size, err := io.Copy(out, res.Body)
 	fmt.Printf("finished, size: %s. \n", byteUnitString(size))
-}
-
-// utils
-func exist(filename string) bool {
-	_, err := os.Stat(filename)
-
-	if os.IsNotExist(err) {
-		return false
-	}
-
-	return true
-}
-
-func getFilename(url string, mediaType string) string {
-	n := path.Base(url)
-
-	if mediaType == "" && (n == "" || n == ".") {
-		return "goget-download"
-	}
-
-	name1 := cutAfter(n, "#")
-	name := cutAfter(name1, "?")
-
-	if path.Ext(name) == "" && mediaType != "" {
-		return name + "." + mediaType
-	}
-
-	return name
-}
-
-func cutAfter(s, sep string) string {
-	if strings.Contains(s, sep) {
-		return strings.Split(s, sep)[0]
-	}
-
-	return s
-}
-
-func cutBefore(s, sep string) string {
-	if strings.Contains(s, sep) {
-		return strings.Split(s, sep)[1]
-	}
-
-	return s
-}
-
-var byteUnits = []string{"B", "KB", "MB", "GB", "TB", "PB"}
-
-func byteUnitString(n int64) string {
-	var unit string
-	size := float64(n)
-	for i := 1; i < len(byteUnits); i++ {
-		if size < 1000 {
-			unit = byteUnits[i-1]
-			break
-		}
-
-		size = size / 1000
-	}
-
-	return fmt.Sprintf("%.3g %s", size, unit)
 }
