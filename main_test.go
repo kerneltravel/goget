@@ -32,10 +32,3 @@ func TestGetByHttps(t *testing.T) {
 		t.Fail()
 	}
 }
-
-// utils
-func equal(s1, s2 string, t *testing.T) {
-	if s1 != s2 {
-		t.Error(s1, "not equal", s2)
-	}
-}

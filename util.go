@@ -1,6 +1,10 @@
 package main
 
+import "net/http"
+import "net/url"
+import "strconv"
 import "strings"
+import "mime"
 import "path"
 import "fmt"
 import "os"
@@ -30,6 +34,16 @@ func getFilename(url string, mediaType string) string {
 	}
 
 	return name
+}
+
+func parseFilename(uri string, header http.Header) string {
+	contentType := header.Get("Content-Type")
+	mimeType, _, _ := mime.ParseMediaType(contentType)
+	mediaType := cutBefore(mimeType, "/")
+
+	filename := getFilename(uri, mediaType)
+
+	return filename
 }
 
 func cutAfter(s, sep string) string {
@@ -63,4 +77,90 @@ func byteUnitString(n int64) string {
 	}
 
 	return fmt.Sprintf("%.3g %s", size, unit)
+}
+
+func int64toString(i int64) string {
+	return strconv.FormatInt(i, 10)
+}
+
+func string2int64(s string) int64 {
+	i, _ := strconv.ParseInt(s, 10, 64)
+	return i
+}
+
+func string2int(s string) int {
+	i, _ := strconv.Atoi(s)
+	return i
+}
+
+func appendFile(filename string, data []byte, offset int64) (int64, error) {
+	var file *os.File
+	var err error
+
+	if !exist(filename) {
+		file, err = os.Create(filename)
+	} else {
+		file, err = os.OpenFile(filename, os.O_RDWR, 0666)
+	}
+	defer file.Close()
+
+	if err != nil {
+		debug("file: %v, error: %v", file, err)
+		return 0, err
+	}
+
+	size, err := file.WriteAt(data, offset)
+
+	if err != nil {
+		debug("error: %v", err)
+		return 0, err
+	}
+
+	return int64(size) + offset, nil
+}
+
+// Example:
+//   "Content-Range": "bytes 100-200/1000"
+//   "Content-Range": "bytes 100-200/*"
+func parseRangeString(r string) (start, end, total int64) {
+	fmt.Sscanf(r, "bytes %d-%d/%d", &start, &end, &total)
+
+	if total != 0 && end > total {
+		end = total
+	}
+	if start >= end {
+		start = 0
+		end = 0
+	}
+
+	return
+}
+
+// Example:
+//   "Range": "bytes=100-200"
+func getRangeString(start, end int64) string {
+	return "bytes=" + int64toString(start) + "-" + int64toString(end)
+}
+
+func checkRangeSupport(h http.Header) bool {
+	return h.Get("Accept-Ranges") == "bytes"
+}
+
+func checkFile(filename string, replace bool) {
+	if exist(filename) {
+		if replace {
+			os.Remove(filename)
+		} else {
+			fmt.Printf("file: %s exist \n", filename)
+			os.Exit(1)
+		}
+	}
+}
+
+func checkUri(uri string) {
+	_, e := url.ParseRequestURI(uri)
+	if e != nil {
+		fmt.Println("invalid url")
+		os.Exit(1)
+	}
 }

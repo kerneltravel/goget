@@ -2,13 +2,14 @@ package main
 
 import "github.com/mitchellh/ioprogress"
 import "github.com/docopt/docopt-go"
+import . "github.com/tj/go-debug"
 import "net/http"
-import "net/url"
 import "strconv"
-import "mime"
 import "fmt"
 import "io"
 import "os"
+
+var debug = Debug("goget")
 
 func main() {
 	usage := `
@@ -40,11 +41,7 @@ func main() {
 }
 
 func get(uri string, replace bool, fname string) {
-	_, e := url.ParseRequestURI(uri)
-	if e != nil {
-		fmt.Println("invalid url")
-		os.Exit(1)
-	}
+	checkUri(uri)
 
 	res, err := http.Get(uri)
 	defer res.Body.Close()
@@ -53,26 +50,15 @@ func get(uri string, replace bool, fname string) {
 	}
 
 	contentLength := res.Header.Get("Content-Length")
-	contentType := res.Header.Get("Content-Type")
-	mimeType, _, _ := mime.ParseMediaType(contentType)
-	mediaType := cutBefore(mimeType, "/")
 
 	var filename string
-
-	if fname == "" {
-		filename = getFilename(uri, mediaType)
-	} else {
+	if fname != "" {
 		filename = fname
+	} else {
+		filename = parseFilename(uri, res.Header)
 	}
 
-	if exist(filename) {
-		if replace {
-			os.Remove(filename)
-		} else {
-			fmt.Printf("file: %s exist \n", filename)
-			os.Exit(1)
-		}
-	}
+	checkFile(filename, replace)
 
 	out, err := os.Create(filename)
 	defer out.Close()
