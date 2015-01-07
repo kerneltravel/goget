@@ -5,7 +5,9 @@ install:
   - go get github.com/axw/gocov/gocov
   - go get github.com/mattn/goveralls
   - go get golang.org/x/tools/cmd/cover
-  - go get github.com/docopt/docopt-go
+
   - go get github.com/mitchellh/ioprogress
+  - go get github.com/docopt/docopt-go
+  - go get github.com/tj/go-debug
 script:
   - $HOME/gopath/bin/goveralls -repotoken M35Koi4EqK4ZEHMds1k3lAvNWELQ26z7R

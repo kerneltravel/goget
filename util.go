@@ -119,33 +119,6 @@ func appendFile(filename string, data []byte, offset int64) (int64, error) {
 	return int64(size) + offset, nil
 }
 
-// Example:
-//   "Content-Range": "bytes 100-200/1000"
-//   "Content-Range": "bytes 100-200/*"
-func parseRangeString(r string) (start, end, total int64) {
-	fmt.Sscanf(r, "bytes %d-%d/%d", &start, &end, &total)
-
-	if total != 0 && end > total {
-		end = total
-	}
-	if start >= end {
-		start = 0
-		end = 0
-	}
-
-	return
-}
-
-// Example:
-//   "Range": "bytes=100-200"
-func getRangeString(start, end int64) string {
-	return "bytes=" + int64toString(start) + "-" + int64toString(end)
-}
-
-func checkRangeSupport(h http.Header) bool {
-	return h.Get("Accept-Ranges") == "bytes"
-}
-
 func checkFile(filename string, replace bool) {
 	if exist(filename) {
 		if replace {
