@@ -11,30 +11,39 @@ import "os"
 
 var debug = Debug("goget")
 
+const duration int64 = 1000 * 1000
+
 func main() {
 	usage := `
 	Usage:
-		goget <uri> [--replace] [--name=<filename>]
+		goget <uri> [--replace] [--name=<filename>] [--continue]
 		goget --help
 		goget --version
 
 	Options:
 		-r --replace         Replace exist file
 		-n --name=<filename> Set file name
+		-c --continue        Resume getting a partially-downloaded file
 		--resume             Resume from break point
 		--help               Show this screen
 		--version            Show version
 	`
 
-	args, _ := docopt.Parse(usage, os.Args[1:], true, "v0.1.0", false)
+	args, _ := docopt.Parse(usage, os.Args[1:], true, "v0.2.0", false)
 
 	uri := args["<uri>"].(string)
 	replace := args["--replace"].(bool)
+	partially := args["--continue"].(bool)
 
 	name, ok := args["--name"]
 	var filename string
 	if ok && name != nil {
 		filename = name.(string)
+	}
+
+	if partially {
+		getPartially(uri, replace, filename)
+		return
 	}
 
 	get(uri, replace, filename)
@@ -85,4 +94,16 @@ func get(uri string, replace bool, fname string) {
 	fmt.Println("start")
 	size, err := io.Copy(out, res.Body)
 	fmt.Printf("finished, size: %s. \n", byteUnitString(size))
+}
+
+func getPartially(uri string, replace bool, filename string) {
+	r, e := newRange(uri, replace, filename)
+
+	if e != nil {
+		panic(e)
+	}
+
+	for {
+		r.resume(duration)
+	}
 }
