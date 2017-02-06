@@ -16,7 +16,16 @@
 go get github.com/coderhaoxin/goget
 
 goget http://example.com/download.mp4
+(ctrl+c to break download)
+
+#resume download
+goget http://example.com/download.mp4 -c
 ```
+
+### todo:
+* multi-thread download
+* more-vorbose printing info.
+* parameter before <uri>
 
 ### License
 MIT
