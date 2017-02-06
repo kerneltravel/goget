@@ -23,7 +23,7 @@ goget http://example.com/download.mp4 -c
 ```
 
 ### todo:
-* multi-thread download
+* multi-thread download (e.g.  /usr/bin/axel -n 60 ...)
 * more-vorbose printing info.
 * parameter before <uri>
 
